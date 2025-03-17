@@ -1,0 +1,42 @@
+{
+  "name": "@josesame/liquidity",
+  "version": "1.0.5",
+  "type": "module",
+  "main": "index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@babel/core": "^7.26.9",
+    "@babel/eslint-parser": "^7.26.10",
+    "@babel/generator": "^7.26.9",
+    "@babel/node": "^7.26.0",
+    "@babel/parser": "^7.26.9",
+    "@babel/preset-env": "^7.26.9",
+    "@babel/preset-react": "^7.26.3",
+    "@babel/register": "^7.25.9",
+    "@josesame/liquidity": "^1.0.0",
+    "@shopify/liquid-html-parser": "^2.7.0",
+    "@shopify/prettier-plugin-liquid": "^1.9.0",
+    "eslint": "^9.22.0",
+    "eslint-plugin-no-comments": "^1.1.10",
+    "eslint-plugin-react": "^7.37.4",
+    "fs-extra": "^11.3.0",
+    "he": "^1.2.0",
+    "jsdom": "^26.0.0",
+    "liquidjs": "^10.21.0",
+    "nodemon": "^3.1.9",
+    "prettier": "^3.5.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sass": "^1.85.1",
+    "striptags": "^3.2.0",
+    "traverse": "^0.6.11"
+  }
+}
