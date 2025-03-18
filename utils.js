@@ -51,7 +51,7 @@ export function getVariables(source) {
 }
 
 export function minify(code) {
-  return code.replace(/\s+/g, ' ').trim(); // Remove excess whitespace and newlines
+  return code.replace(/\s+/g, ' ').trim();
 }
 
 export async function prettyLiquid(source) {
@@ -60,7 +60,7 @@ export async function prettyLiquid(source) {
     parser: "liquid-html",
     singleQuote: false,
   });
-  formatted = formatted.replace(/'/g, '"'); 
+  formatted = formatted.replace(/'/g, '"');
   return formatted;
 }
 
