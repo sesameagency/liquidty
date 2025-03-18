@@ -1,6 +1,6 @@
-import * as liquidParser from '@shopify/liquid-html-parser'
 import prettier from 'prettier'
 import liquidPlugin from "@shopify/prettier-plugin-liquid";
+import * as liquidParser from '@shopify/liquid-html-parser'
 
 export function parseLiquid(source) {
 	const tags = getTags(source)
@@ -37,7 +37,8 @@ export function getVariables(source) {
 	const variables =
 		Array.from(source.matchAll(regex))
 		.map(match => {
-			return {
+			const isValid = typeof liquidParser.toLiquidAST(match[0])?.children[0]?.markup === 'object';
+			return isValid && {
 				position: {start: match.index, end: match.index + match[0].length - 1},
 				innerSource: match[1],
 				source: match[0],
@@ -45,7 +46,7 @@ export function getVariables(source) {
 				type: 'LiquidTag',
 				token: generateToken(),
 			};
-		})
+		}).filter(v => v);
 	return variables;
 }
 
@@ -54,10 +55,13 @@ export function minify(code) {
 }
 
 export async function prettyLiquid(source) {
-  return await prettier.format(source, {
+  let formatted = await prettier.format(source, {
     plugins: [liquidPlugin],
     parser: "liquid-html",
+    singleQuote: false,
   });
+  formatted = formatted.replace(/'/g, '"'); 
+  return formatted;
 }
 
 export async function prettyJs(source) {

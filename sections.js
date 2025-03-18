@@ -29,7 +29,9 @@ export async function compileSections({inputPath, outputPath} = {}) {
 	)
 	outputPath = path.resolve(outputPath || `${root}/sections`)
 
-	const fileNames = fs.readdirSync(inputPath)
+	const fileNames =
+		fs.readdirSync(inputPath)
+		.filter(f => path.extname(f) === '.liquid')
 	return Promise.all(
 		fileNames.map(fileName => {
 			const fileInputPath = path.resolve(`${inputPath}/${fileName}`)
@@ -45,7 +47,7 @@ export async function compileSection({inputPath, outputPath} = {}) {
 	const root = process.cwd();
 	inputPath = path.resolve(path.isAbsolute(inputPath) ? inputPath : `${root}/${inputPath}`)
 	outputPath = path.resolve(outputPath || `${root}/sections/${path.basename(inputPath)}`)
-  const inputSource = fs.readFileSync(inputPath, 'utf-8');
+	const inputSource = fs.readFileSync(inputPath, 'utf-8');
 
 	const dom = new JSDOM(`<html><body>${inputSource}</body></html>`);
   const { window } = dom;
@@ -149,6 +151,7 @@ export async function compileJs({tokenizedSource, tags, variables}) {
     presets: ["@babel/preset-react"],
     plugins: ["@babel/plugin-transform-modules-commonjs"],
   }).code;
+	tokenizedJs = await prettyJs(tokenizedJs);
   let hydratedJs = tokenizedJs;
   tags.forEach(tag => {
     hydratedJs = hydratedJs.replace(tag.token, tag.cleanSource)
