@@ -24,6 +24,7 @@
     "@josesame/liquidity": "^1.0.0",
     "@shopify/liquid-html-parser": "^2.7.0",
     "@shopify/prettier-plugin-liquid": "^1.9.0",
+    "crypto": "^1.0.1",
     "eslint": "^9.22.0",
     "eslint-plugin-no-comments": "^1.1.10",
     "eslint-plugin-react": "^7.37.4",

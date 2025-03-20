@@ -7,7 +7,7 @@ import he from "he";
 import { transformSync } from "@babel/core";
 import {JSDOM} from 'jsdom'
 import * as sass from 'sass'
-
+import crypto from 'crypto'
 
 export function parseLiquid(source) {
 	const tags = getTags(source)
@@ -33,7 +33,7 @@ export function getTags(source) {
 				source: match[0],
 				cleanSource: match[0].replace(/"/g, "'"),
 				type: 'LiquidTag',
-				token: generateToken(),
+				token: generateToken({source: match[0]}),
 			};
 		})
 	return tags;
@@ -51,7 +51,7 @@ export function getVariables(source) {
 				source: match[0],
 				cleanSource: match[0].replace(/"/g, "'"),
 				type: 'LiquidTag',
-				token: generateToken(),
+				token: generateToken({source: match[0]}),
 			};
 		}).filter(v => v);
 	return variables;
@@ -77,32 +77,21 @@ export async function prettyJs(source) {
   });
 }
 
-export async function printAllNodes(source) {
-  const document = liquidParser.toLiquidHtmlAST(source)
-  const nodes = traverse(document).nodes();
-  nodes.forEach(node => node?.type && console.log({
-    nodeSource: source.slice(node.position.start, node.position.end),
-    type: node.type,
-    name: node.name === 'string' ? node.name : typeof node.name,
-    keys: Object.keys(node).join(', ')
-  }))
-}
-
 export function sleep(ms=1) {
 	return new Promise(r => setTimeout(r, ms))
 }
 
-export function generateToken(key=777) {
-  const randomNumber = Math.floor(Math.random() * 1e10); // 1e10 is 10^10
-  const tenDigitNumber = randomNumber.toString().padStart(10, '0'); // Ensure it's 10 digits
-  return Number(`${key}${tenDigitNumber}${key}`);
+export function generateToken({key=777, source=''}) {
+  const hash = crypto.createHash('sha256').update(source).digest('hex');
+  const numericHash = parseInt(hash.substring(0, 15), 16);
+  return numericHash;
 }
 
 export async function compileScripts({ document }) {
 	const scripts = Array.from(document.querySelectorAll('script[type="text/babel"]'))
 	return Promise.all(scripts.map(async script => {
-		const scriptId = generateToken()
 		const source = script.outerHTML;
+		const scriptId = generateToken({source})
 	  const {tokenizedSource, tags, variables} = await tokenizeScriptSource(source, false)
 		const {hydratedJs, tokenizedJs} = await compileJs({
 			tokenizedSource,
@@ -142,7 +131,7 @@ export async function compileStyles({document}) {
 		style.setAttribute('type', 'text/plain');
     let matches = [];
     const cssString = style.innerHTML.replace(liquidSyntaxRegex, (match) => {
-			let token = generateToken();
+			let token = generateToken({source: match});
       let replace = "";
       if (match.startsWith("{{")) replace = Number(`${token}`)
       if (match.startsWith("{%")) replace = String(`/*${token}*/`);
