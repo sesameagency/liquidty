@@ -21,7 +21,7 @@ An example file at the following location
 ```liquid
 <script type="text/babel">
   function App() {
-    return <div>{{sectioin.settings.title}}</div>
+    return <div>{{section.settings.title}}</div>
   }
 </script>
 
@@ -50,12 +50,12 @@ can be compiled to valid liquid in the theme's section directory
 
 ```liquid
 <div class="root root-7770641847050777">
-  <div>{{ sectioin.settings.title }}</div>
+  <div>{{ section.settings.title }}</div>
 </div>
 <script type="module">
   "use strict";
   function App() {
-    return /*#__PURE__*/ React.createElement("div", null, "{{sectioin.settings.title}}");
+    return /*#__PURE__*/ React.createElement("div", null, "{{section.settings.title}}");
   }
   ReactDOMClient.createRoot(document.querySelector("#shopify-section-{{section.id}} .root-7770641847050777")).render(
     React.createElement(App),
