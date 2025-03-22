@@ -87,7 +87,7 @@ export function generateToken({key=777, source=''}) {
   return numericHash;
 }
 
-export async function compileScripts({ document }) {
+export async function compileScripts({ document, modules }) {
 	const scripts = Array.from(document.querySelectorAll('script[type="text/babel"]'))
 	return Promise.all(scripts.map(async script => {
 		const source = script.outerHTML;
@@ -102,6 +102,7 @@ export async function compileScripts({ document }) {
 			tokenizedJs,
 			tags,
 			variables,
+      modules,
 		})
 		script.outerHTML = `
 			<div class="root root-${scriptId}">${hydratedHtml}</div>
@@ -181,10 +182,11 @@ export async function compileJs({tokenizedSource, tags, variables}) {
   return {tokenizedJs, hydratedJs};
 }
 
-export async function compileHtml({tokenizedJs, tags, variables, functionName='App'}) {
+export async function compileHtml({tokenizedJs, tags, variables, functionName='App', modules=''}) {
   const App = new Function(`
-    const React = arguments[0];
-    const _react = {default: arguments[0]};
+    ${modules}
+    React = arguments[0];
+    _react = {default: arguments[0]};
     ${tokenizedJs};
     return typeof ${functionName} === 'function' ? ${functionName} : _${functionName};
   `)(React);

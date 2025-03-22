@@ -14,7 +14,7 @@ export default {
 	compileSection,
 }
 
-export async function compileSections({inputPath, outputPath} = {}) {
+export async function compileSections({inputPath, outputPath, modules} = {}) {
 	const root = process.cwd();
 	inputPath = path.resolve(inputPath ? (
 		path.isAbsolute(inputPath)
@@ -34,11 +34,12 @@ export async function compileSections({inputPath, outputPath} = {}) {
 			return compileSection({
 				inputPath: fileInputPath,
 				outputPath: fileOutputPath,
+        modules,
 			})
 	}))
 }
 
-export async function compileSection({inputPath, outputPath} = {}) {
+export async function compileSection({inputPath, outputPath, modules} = {}) {
 	const root = process.cwd();
 	inputPath = path.resolve(path.isAbsolute(inputPath) ? inputPath : `${root}/${inputPath}`)
 	outputPath = path.resolve(outputPath || `${root}/sections/${path.basename(inputPath)}`)
@@ -48,9 +49,9 @@ export async function compileSection({inputPath, outputPath} = {}) {
   const { window } = dom;
   const { document } = window;
 
-	await compileSchema({dom, window, document})
-	await compileStyles({dom, window, document})
-	await compileScripts({dom, window, document})
+	await compileSchema({dom, window, document, modules})
+	await compileStyles({dom, window, document, modules})
+	await compileScripts({dom, window, document, modules})
 
 	const outputSource = await prettyLiquid(he.decode(document.body.innerHTML));
 	fs.writeFileSync(outputPath, outputSource);
