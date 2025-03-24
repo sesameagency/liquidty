@@ -12,6 +12,7 @@ import babelParser from '@babel/parser';
 import babelTraverse from '@babel/traverse';
 import path from 'path'
 import fs from 'fs-extra'
+import {Liquid} from 'liquidjs'
 
 export function parseLiquid(source) {
 	const tags = getTags(source)
@@ -162,14 +163,35 @@ export async function compileStyles({document}) {
 
 export async function tokenizeScriptSource({source, inputPath}) {
 	source = await prettyLiquid(source)
-  source = processImports({source, inputPath});
-	const {tags, variables} = parseLiquid(source);
+  source = processJsxImports({source, inputPath});
+  source = processJsxRenders({source, inputPath});
+	let {tags, variables} = parseLiquid(source);
 	const tokenizedSource = tokenizeJsxSource(source, tags, variables)
 	return {tokenizedSource, tags, variables}
 }
 
+export function processJsxRenders({source, inputPath}) {
+	const { tags } = parseLiquid(source);
+  tags.forEach(tag => {
+    const parsedTag = parseLiquidTag(tag.source)
+    if(parsedTag?.name !== 'render' || !parsedTag?.file?.endsWith('jsx.liquid')) return tag;
+    const file = path.resolve(path.join(path.dirname(inputPath), parsedTag.file))
+    const rawCode = fs.readFileSync(file, 'utf-8')
+    source = source.replace(tag.source, rawCode)
+  })
+  return source;
+}
 
-export function processImports({source, inputPath}) {
+export function parseLiquidTag(source) {
+  try {
+    const engine = new Liquid()
+    return engine.parse(source)[0]
+  } catch(err) {
+    // na
+  }
+}
+
+export function processJsxImports({source, inputPath}) {
   source = stripComments(source);
   const importSources = getImportSources(source);
   if(!importSources) return source;
@@ -199,7 +221,7 @@ export function processImports({source, inputPath}) {
       const functionCode = document.querySelector(selector)?.innerHTML
       if(!functionCode) return;
       const hasAdditionalImportSources = Boolean(getImportSources(functionCode))
-      const finalCode = hasAdditionalImportSources ?  processImports({source: functionCode, inputPath: file}) : functionCode;
+      const finalCode = hasAdditionalImportSources ? processJsxImports({source: functionCode, inputPath: file}) : functionCode;
       functionsSource += `\n ${finalCode} \n`
     })
     source = source.replace(importSource, functionsSource)

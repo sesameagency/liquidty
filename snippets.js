@@ -25,7 +25,7 @@ export async function compileSnippets({inputPath, outputPath} = {}) {
 
   const fileNames =
     fs.readdirSync(inputPath)
-    .filter(f => path.extname(f) === '.liquid')
+    .filter(f => path.extname(f) === '.liquid' && !f.endsWith('.jsx.liquid'))
   return Promise.all(
     fileNames.map(fileName => {
       const fileInputPath = path.resolve(`${inputPath}/${fileName}`)
