@@ -210,21 +210,13 @@ export function processImports({source, inputPath}) {
 function getImportSources(source) {
   const importRegex = /import\s+[\s\S]+?from\s+['"][^'"]+['"];?/g;
   const strippedSource = stripComments(source);
-  const importSources = strippedSource.match(importRegex);
+  const importSources = source.match(importRegex);
   return importSources
 }
 
-export function stripComments(source) {
-  return source
-    // Remove single-line JS comments (// ...)
-    .replace(/\/\/[^\n\r]*/g, '')
-    // Remove multi-line JS comments (/* ... */)
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    // Remove Liquid comments ({% comment %} ... {% endcomment %})
-    .replace(/{%\s*comment\s*%}[\s\S]*?{%\s*endcomment\s*%}/g, '');
+export function stripComments(string){
+  return string.replace(/\/\*[\s\S]*?\*\/|(?<=[^:])\/\/.*|^\/\/.*/g,'').trim();
 }
-
-
 
 export async function compileJs({tokenizedSource, tags, variables}) {
 	const scriptDom = new JSDOM(`<html><body>${tokenizedSource}</body></html>`);
