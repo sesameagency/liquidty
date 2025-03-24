@@ -49,9 +49,9 @@ export async function compileSection({inputPath, outputPath, modules} = {}) {
   const { window } = dom;
   const { document } = window;
 
-	await compileSchema({dom, window, document, modules})
-	await compileStyles({dom, window, document, modules})
-	await compileScripts({dom, window, document, modules})
+	await compileSchema({dom, window, document, modules, inputPath, outputPath})
+	await compileStyles({dom, window, document, modules, inputPath, outputPath})
+	await compileScripts({dom, window, document, modules, inputPath, outputPath})
 
 	const outputSource = await prettyLiquid(he.decode(document.body.innerHTML));
 	fs.writeFileSync(outputPath, outputSource);

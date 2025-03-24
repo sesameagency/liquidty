@@ -8,6 +8,10 @@ import { transformSync } from "@babel/core";
 import {JSDOM} from 'jsdom'
 import * as sass from 'sass'
 import crypto from 'crypto'
+import babelParser from '@babel/parser';
+import babelTraverse from '@babel/traverse';
+import path from 'path'
+import fs from 'fs-extra'
 
 export function parseLiquid(source) {
 	const tags = getTags(source)
@@ -87,12 +91,12 @@ export function generateToken({key=777, source=''}) {
   return numericHash;
 }
 
-export async function compileScripts({ document, modules }) {
+export async function compileScripts({ document, modules, inputPath }) {
 	const scripts = Array.from(document.querySelectorAll('script[type="text/babel"]'))
 	return Promise.all(scripts.map(async script => {
 		const source = script.outerHTML;
 		const scriptId = generateToken({source})
-	  const {tokenizedSource, tags, variables} = await tokenizeScriptSource(source, false)
+	  const {tokenizedSource, tags, variables} = await tokenizeScriptSource({source, inputPath})
 		const {hydratedJs, tokenizedJs} = await compileJs({
 			tokenizedSource,
 			tags,
@@ -156,12 +160,71 @@ export async function compileStyles({document}) {
 	}))
 }
 
-export async function tokenizeScriptSource(source) {
+export async function tokenizeScriptSource({source, inputPath}) {
 	source = await prettyLiquid(source)
+  source = processImports({source, inputPath});
 	const {tags, variables} = parseLiquid(source);
 	const tokenizedSource = tokenizeJsxSource(source, tags, variables)
 	return {tokenizedSource, tags, variables}
 }
+
+
+export function processImports({source, inputPath}) {
+  source = stripComments(source);
+  const importSources = getImportSources(source);
+  if(!importSources) return source;
+  importSources.forEach((importSource) => {
+    let functionsSource = ''
+    const ast = babelParser.parse(importSource, { sourceType: 'module', plugins: ['jsx'] });
+    const imports = [];
+    babelTraverse.default(ast, {
+      ImportDeclaration(path) {
+        path.node.specifiers.forEach(specifier => {
+          imports.push({
+            id: specifier.local.name,
+            path: path.node.source.value,
+            type: specifier.type === 'ImportDefaultSpecifier'
+              ? 'default'
+              : 'named',
+          });
+        });
+      }
+    });
+    imports.forEach(imp => {
+      const file = path.resolve(path.join(path.dirname(inputPath), imp.path))
+      const rawCode = fs.readFileSync(file, 'utf-8')
+	    const dom = new JSDOM(rawCode);
+      const {document} = dom.window
+      const selector = imp.type === 'default' ? 'script:not([id])' : `script[id="${imp.id}"]`
+      const functionCode = document.querySelector(selector)?.innerHTML
+      if(!functionCode) return;
+      const hasAdditionalImportSources = Boolean(getImportSources(functionCode))
+      const finalCode = hasAdditionalImportSources ?  processImports({source: functionCode, inputPath: file}) : functionCode;
+      functionsSource += `\n ${finalCode} \n`
+    })
+    source = source.replace(importSource, functionsSource)
+  })
+	return source;
+}
+
+function getImportSources(source) {
+  const importRegex = /import\s+[\s\S]+?from\s+['"][^'"]+['"];?/g;
+  const strippedSource = stripComments(source);
+  const importSources = strippedSource.match(importRegex);
+  return importSources
+}
+
+export function stripComments(source) {
+  return source
+    // Remove single-line JS comments (// ...)
+    .replace(/\/\/[^\n\r]*/g, '')
+    // Remove multi-line JS comments (/* ... */)
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    // Remove Liquid comments ({% comment %} ... {% endcomment %})
+    .replace(/{%\s*comment\s*%}[\s\S]*?{%\s*endcomment\s*%}/g, '');
+}
+
+
 
 export async function compileJs({tokenizedSource, tags, variables}) {
 	const scriptDom = new JSDOM(`<html><body>${tokenizedSource}</body></html>`);
