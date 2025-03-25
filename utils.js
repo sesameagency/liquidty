@@ -171,25 +171,24 @@ export async function tokenizeScriptSource({source, inputPath}) {
 }
 
 export function processJsxRenders({source, inputPath}) {
-  const tags = getJsxRenderTags(source)
+  const tags = getJsxIncludeTags(source)
   tags.forEach(tag => {
     const file = path.resolve(path.join(path.dirname(inputPath), tag.parsedTag.file))
     const rawCode = fs.readFileSync(file, 'utf-8')
     source = source.replace(tag.source, rawCode)
-	  const hasMoreRenders = getJsxRenderTags(source)?.length > 0;
-    console.log({hasMoreRenders})
-    if(hasMoreRenders) {
+	  const hasMoreIncludes = getJsxIncludeTags(source)?.length > 0;
+    if(hasMoreIncludes) {
       source = processJsxRenders({source, inputPath: file})
     }
   })
   return source;
 }
 
-export function getJsxRenderTags(source) {
+export function getJsxIncludeTags(source) {
 	let { tags } = parseLiquid(source);
   tags = tags.map(tag => {
     const parsedTag = parseLiquidTag(tag.source)
-    if(parsedTag?.name === 'render' || parsedTag?.file?.endsWith('jsx.liquid')) {
+    if(parsedTag?.name === 'include'  && parsedTag?.file?.endsWith('jsx.liquid')) {
       return {
         ...tag,
         parsedTag,
