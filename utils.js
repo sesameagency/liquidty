@@ -163,36 +163,43 @@ export async function compileStyles({document}) {
 
 export async function tokenizeScriptSource({source, inputPath}) {
 	source = await prettyLiquid(source)
-  source = processJsxImports({source, inputPath});
-  source = processJsxRenders({source, inputPath});
+  source = processImports({source, inputPath});
+  source = processIncludes({source, inputPath});
 	let {tags, variables} = parseLiquid(source);
 	const tokenizedSource = tokenizeJsxSource(source, tags, variables)
 	return {tokenizedSource, tags, variables}
 }
 
-export function processJsxRenders({source, inputPath}) {
+export function processIncludes({source, inputPath}) {
   const tags = getJsxIncludeTags(source)
   tags.forEach(tag => {
     const file = path.resolve(path.join(path.dirname(inputPath), tag.parsedTag.file))
-    const rawCode = fs.readFileSync(file, 'utf-8')
+    const rawCode = readFile(file)
+    if(!rawCode) return
     source = source.replace(tag.source, rawCode)
 	  const hasMoreIncludes = getJsxIncludeTags(source)?.length > 0;
     if(hasMoreIncludes) {
-      source = processJsxRenders({source, inputPath: file})
+      source = processIncludes({source, inputPath: file})
     }
   })
   return source;
+}
+
+export function readFile(file) {
+  try {
+    return fs.readFileSync(file, 'utf-8')
+  } catch(err) {
+    // na
+  }
 }
 
 export function getJsxIncludeTags(source) {
 	let { tags } = parseLiquid(source);
   tags = tags.map(tag => {
     const parsedTag = parseLiquidTag(tag.source)
-    if(parsedTag?.name === 'include'  && parsedTag?.file?.endsWith('jsx.liquid')) {
-      return {
-        ...tag,
-        parsedTag,
-      }
+    return parsedTag?.name === 'include' && {
+      ...tag,
+      parsedTag,
     }
   }).filter(t => t);
   return tags;
@@ -207,7 +214,7 @@ export function parseLiquidTag(source) {
   }
 }
 
-export function processJsxImports({source, inputPath}) {
+export function processImports({source, inputPath}) {
   source = stripComments(source);
   const importSources = getImportSources(source);
   if(!importSources) return source;
@@ -230,14 +237,15 @@ export function processJsxImports({source, inputPath}) {
     });
     imports.forEach(imp => {
       const file = path.resolve(path.join(path.dirname(inputPath), imp.path))
-      const rawCode = fs.readFileSync(file, 'utf-8')
+      const rawCode = readFile(file)
+      if(!rawCode) return;
 	    const dom = new JSDOM(rawCode);
       const {document} = dom.window
       const selector = imp.type === 'default' ? 'script:not([id])' : `script[id="${imp.id}"]`
       const functionCode = document.querySelector(selector)?.innerHTML
       if(!functionCode) return;
       const hasAdditionalImportSources = Boolean(getImportSources(functionCode))
-      const finalCode = hasAdditionalImportSources ? processJsxImports({source: functionCode, inputPath: file}) : functionCode;
+      const finalCode = hasAdditionalImportSources ? processImports({source: functionCode, inputPath: file}) : functionCode;
       functionsSource += `\n ${finalCode} \n`
     })
     source = source.replace(importSource, functionsSource)
