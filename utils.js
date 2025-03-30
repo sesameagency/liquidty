@@ -110,13 +110,13 @@ export async function compileScripts({ document, modules, inputPath }) {
       modules,
 		})
 		script.outerHTML = `
-			<div class="root root-${scriptId}">${hydratedHtml}</div>
 			<script type="module">
 				${hydratedJs}
 				ReactDOMClient
 					.createRoot(document.querySelector('#shopify-section-{{section.id}} .root-${scriptId}'))
 					.render(React.createElement(App));
 			</script>
+			<div class="root root-${scriptId}">${hydratedHtml}</div>
 		`
 		return {scriptId, source, tokenizedSource, tags, variables, hydratedJs, tokenizedJs, hydratedHtml, tokenizedHtml}
 	}))
