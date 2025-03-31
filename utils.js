@@ -72,7 +72,7 @@ export async function prettyLiquid(source) {
     parser: "liquid-html",
     singleQuote: false,
   });
-  formatted = formatted.replace(/'/g, '"');
+  // formatted = formatted.replace(/'/g, '"');
   return formatted;
 }
 
