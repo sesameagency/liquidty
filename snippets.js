@@ -3,7 +3,6 @@ import fs from 'fs-extra'
 import path from 'path'
 import {JSDOM} from 'jsdom'
 import {
-  prettyLiquid,
   compileScripts,
   compileStyles,
 } from './utils.js'
@@ -50,7 +49,7 @@ export async function compileSnippet({inputPath, outputPath} = {}) {
   await compileStyles({dom, window, document})
   await compileScripts({dom, window, document})
 
-  const outputSource = await prettyLiquid(he.decode(document.body.innerHTML));
+  const outputSource = he.decode(document.body.innerHTML);
   fs.writeFileSync(outputPath, outputSource);
 
   return {
